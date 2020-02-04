@@ -1,0 +1,5 @@
+﻿  Desicion Stump.cpp
+d:\machine learning\code\desicion stump\desicion stump\desicion stump.cpp(62): fatal error C1010: непредвиденный конец файла во время поиска предкомпилированного заголовка. Возможно, вы забыли добавить директиву "#include "stdafx.h"" в источник.
+  Stump.cpp
+d:\machine learning\code\desicion stump\desicion stump\stump.cpp(103): warning C4244: аргумент: преобразование "double" в "const unsigned int", возможна потеря данных
+  Создание кода...
