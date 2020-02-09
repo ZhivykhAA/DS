@@ -19,10 +19,12 @@ public:
 	double a;
 	double b;
 	double c;
+	double best_pr;
+	double min_err;
 	void learn();
+	double cross();
 
 	Stump();
-	Stump(vector<vector<int>> data);
 	~Stump();
 };
 
