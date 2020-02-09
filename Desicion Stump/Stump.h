@@ -22,7 +22,7 @@ public:
 	double best_pr;
 	double min_err;
 	void learn();
-	double cross();
+	double cross(int k);
 
 	Stump();
 	~Stump();

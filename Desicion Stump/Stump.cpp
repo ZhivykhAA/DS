@@ -117,25 +117,31 @@ void Stump::learn() {
 		}
 	}
 
-	//cout << "pr: " << best_pr + 1 << "\nC: " << c << "\nA: " << a << "\nB: " << b << "\nRMSE: " << min_err;
-
  	return;
 }
 
 
 
-double Stump::cross() {
-	int k = 5;
+double Stump::cross(int k) {
+
 	int k_test = set.size() / k;
 	int k_ost = set.size() - k * k_test;
 	double err_a, err_b, cross_err = 0;
 	
 	Stump data, test;
 
-	// проходим K раз по данным, меняя обучающую и тестовую выборки
+	random_shuffle(set.begin(), set.end());
+	
+	// run data K times, by changing learn and test dataset
 	for (int i = 0; i < k; i++) {
-
+		
 		data.set = set;
+		data.a = NULL;
+		data.b = NULL;
+		data.c = NULL;
+		data.best_pr = NULL;
+		data.min_err = NULL;
+
 		test.set.erase(test.set.begin(), test.set.end());
 
 		int siz;
@@ -148,19 +154,19 @@ double Stump::cross() {
 		}
 		test.set.resize(siz);
 
-		// создание тестовой выборки
+		// create test dataset
 		move(data.set.begin() + siz * i, data.set.begin() + siz * (i + 1), test.set.begin());
-		// создание обучающей выборки
+		// create learn dataset
 		data.set.erase(data.set.begin() + siz * i, data.set.begin() + siz * (i + 1));
 
-		// обучаемся
+		// learn
 		data.learn();
 
+		// test
 		err_a = 0;
 		err_b = 0;
-		// тестируем
 		for (int j = 0; j < test.set.size(); j++) {
-			if (test.set[j][test.best_pr] < test.c) {
+			if (test.set[j][test.best_pr] < data.c) {
 				err_a += pow(test.set[j][test.set[0].size() - 1] - data.a, 2);
 			}
 			else {
@@ -168,11 +174,6 @@ double Stump::cross() {
 			}
 		}		
 		cross_err += pow(sqrt((err_a + err_b) / test.set.size()), 2);
-
-		cout << "i = " << i << "  cross = " << cross_err << "\nRMSE: " << data.min_err << endl;
-		
-		//cout << "i = " << i << "\nC: " << data.c << "\nA: " << data.a << "\nB: " << data.b << "\npr: " << data.best_pr << "\nRMSE: " << data.min_err << endl;
-		//cout << data.set.size() << endl << siz * (i) << endl << test.set.size() << endl;
 	}
 	cross_err = sqrt(cross_err/ k);
 
