@@ -1,7 +1,6 @@
 #include "stdafx.h"
 #include "Stump.h"
 
-
 Stump::Stump() {
 }
 
@@ -11,7 +10,6 @@ Stump::~Stump() {
 void Stump::setSet(vector<int> str) {
 	data.push_back(str);
 }
-
 
 
 const TStump &learn(vector<vector<int>> set) {
@@ -132,15 +130,15 @@ double cross(int k, vector<vector<int>> set) {
 	int k_test = set.size() / k;
 	int k_ost = set.size() - k * k_test;
 	double err_a, err_b, cross_err = 0, min_err;
-	
+
 	vector<vector<int>> data, test;
 	TStump St;
 
 	random_shuffle(set.begin(), set.end());
-	
+
 	// run data K times, by changing learn and test dataset
 	for (int i = 0; i < k; i++) {
-		
+
 		data = set;
 		St.a = NULL;
 		St.b = NULL;
@@ -178,11 +176,11 @@ double cross(int k, vector<vector<int>> set) {
 			else {
 				err_b += pow(test[j][test[0].size() - 1] - St.b, 2);
 			}
-		}		
+		}
 		cross_err += pow(sqrt((err_a + err_b) / test.size()), 2);
 	}
 
-	cross_err = sqrt(cross_err/ k);
+	cross_err = sqrt(cross_err / k);
 
 	return cross_err;
 }
