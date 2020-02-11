@@ -14,17 +14,22 @@ using namespace std;
 
 class Stump
 {
+	vector<vector<int>> data; 
 public:
-	vector<vector<int>> set; //запоминает data
+	Stump();
+	~Stump();
+	void setSet(vector<int> str);
+	const vector<vector<int>> &getSet() { return data; };
+};
+
+struct TStump {
 	double a;
 	double b;
 	double c;
 	double best_pr;
 	double min_err;
-	void learn();
-	double cross(int k);
-
-	Stump();
-	~Stump();
 };
 
+const TStump &learn(vector<vector<int>> set);
+
+double cross(int k, vector<vector<int>> set);

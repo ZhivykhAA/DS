@@ -5,16 +5,22 @@
 Stump::Stump() {
 }
 
-Stump::~Stump(){
+Stump::~Stump() {
+}
+
+void Stump::setSet(vector<int> str) {
+	data.push_back(str);
 }
 
 
-void Stump::learn() {
 
+const TStump &learn(vector<vector<int>> set) {
+	TStump S;
 	double ci;
 
 	double sum_pow_a = 0, sum_a = 0, count_a = 0, sum_pow_b = 0, sum_b = 0, count_b = 0;
-	double sum_pow_all = 0, sum_all = 0, count_all = set.size();
+	double sum_pow_all = 0, sum_all = 0;
+	int count_all = set.size();
 	double err = 0, err_a = 0, err_b = 0;
 
 	// calculate sum of y and sum of y^2
@@ -22,20 +28,20 @@ void Stump::learn() {
 		sum_all += set[l][set[l].size() - 1];
 		sum_pow_all += pow(set[l][set[l].size() - 1], 2);
 	}
-		
+
 	err_b = sum_pow_all - pow(sum_all, 2) / count_all;
-	min_err = err_a + err_b;
+	S.min_err = err_a + err_b;
 
 	// index of y
 	int y = set[0].size() - 1;
-	
+
 	for (int pr = 0; pr < y; pr++) {
-		
-		sort(set.begin(), set.end(), [&pr](vector<int> a, vector<int> b) mutable {return a[pr] < b[pr];});
+
+		sort(set.begin(), set.end(), [&pr](vector<int> a, vector<int> b) mutable {return a[pr] < b[pr]; });
 
 		// min C
-		ci = set[0][pr] - 1; 
-		
+		ci = set[0][pr] - 1;
+
 		sum_a = 0;
 		sum_pow_a = 0;
 		count_a = 0;
@@ -48,12 +54,12 @@ void Stump::learn() {
 
 		err = sqrt((err_a + err_b) / set.size());
 
-		if (err < min_err) {
-			min_err = err;
-			a = 0;
-			b = sum_b / count_b;
-			c = ci;
-			best_pr = pr;
+		if (err < S.min_err) {
+			S.min_err = err;
+			S.a = 0;
+			S.b = sum_b / count_b;
+			S.c = ci;
+			S.best_pr = pr;
 		}
 
 		// average C
@@ -74,14 +80,14 @@ void Stump::learn() {
 
 				err = sqrt((err_a + err_b) / set.size());
 
-				if (err < min_err) {
-					min_err = err;
-					a = sum_a / count_a;
-					b = sum_b / count_b;
-					c = ci;
-					best_pr = pr;
+				if (err < S.min_err) {
+					S.min_err = err;
+					S.a = sum_a / count_a;
+					S.b = sum_b / count_b;
+					S.c = ci;
+					S.best_pr = pr;
 				}
-			} 
+			}
 			else {
 				sum_a += set[i][y];
 				sum_pow_a += pow(set[i][y], 2);
@@ -94,7 +100,7 @@ void Stump::learn() {
 		}
 
 		// max C
-		ci = set[count_all - 1][pr] + 1;  
+		ci = set[count_all - 1][pr] + 1;
 
 		sum_a = sum_all;
 		sum_pow_a = sum_pow_all;
@@ -108,41 +114,41 @@ void Stump::learn() {
 
 		err = sqrt((err_a + err_b) / set.size());
 
-		if (err < min_err) {
-			min_err = err;
-			a = sum_a / count_a;
-			b = sum_b / count_b;
-			c = ci;
-			best_pr = pr;
+		if (err < S.min_err) {
+			S.min_err = err;
+			S.a = sum_a / count_a;
+			S.b = sum_b / count_b;
+			S.c = ci;
+			S.best_pr = pr;
 		}
 	}
 
- 	return;
+	return S;
 }
 
 
-
-double Stump::cross(int k) {
+double cross(int k, vector<vector<int>> set) {
 
 	int k_test = set.size() / k;
 	int k_ost = set.size() - k * k_test;
-	double err_a, err_b, cross_err = 0;
+	double err_a, err_b, cross_err = 0, min_err;
 	
-	Stump data, test;
+	vector<vector<int>> data, test;
+	TStump St;
 
 	random_shuffle(set.begin(), set.end());
 	
 	// run data K times, by changing learn and test dataset
 	for (int i = 0; i < k; i++) {
 		
-		data.set = set;
-		data.a = NULL;
-		data.b = NULL;
-		data.c = NULL;
-		data.best_pr = NULL;
-		data.min_err = NULL;
+		data = set;
+		St.a = NULL;
+		St.b = NULL;
+		St.c = NULL;
+		St.best_pr = NULL;
+		min_err = NULL;
 
-		test.set.erase(test.set.begin(), test.set.end());
+		test.erase(test.begin(), test.end());
 
 		int siz;
 		if (k_ost > 0) {
@@ -152,29 +158,30 @@ double Stump::cross(int k) {
 		else {
 			siz = k_test;
 		}
-		test.set.resize(siz);
+		test.resize(siz);
 
 		// create test dataset
-		move(data.set.begin() + siz * i, data.set.begin() + siz * (i + 1), test.set.begin());
+		move(data.begin() + siz * i, data.begin() + siz * (i + 1), test.begin());
 		// create learn dataset
-		data.set.erase(data.set.begin() + siz * i, data.set.begin() + siz * (i + 1));
+		data.erase(data.begin() + siz * i, data.begin() + siz * (i + 1));
 
 		// learn
-		data.learn();
+		St = learn(data);
 
 		// test
 		err_a = 0;
 		err_b = 0;
-		for (int j = 0; j < test.set.size(); j++) {
-			if (test.set[j][test.best_pr] < data.c) {
-				err_a += pow(test.set[j][test.set[0].size() - 1] - data.a, 2);
+		for (int j = 0; j < test.size(); j++) {
+			if (test[j][St.best_pr] < St.c) {
+				err_a += pow(test[j][test[0].size() - 1] - St.a, 2);
 			}
 			else {
-				err_b += pow(test.set[j][test.set[0].size() - 1] - data.b, 2);
+				err_b += pow(test[j][test[0].size() - 1] - St.b, 2);
 			}
 		}		
-		cross_err += pow(sqrt((err_a + err_b) / test.set.size()), 2);
+		cross_err += pow(sqrt((err_a + err_b) / test.size()), 2);
 	}
+
 	cross_err = sqrt(cross_err/ k);
 
 	return cross_err;
