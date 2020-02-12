@@ -12,14 +12,14 @@ void Stump::setSet(vector<int> str) {
 }
 
 
-const TStump &learn(vector<vector<int>> set) {
+const TStump learn(vector<vector<int>> set) {
 	TStump S;
 
-	volatile int count_all = set.size();
-	volatile double ci = 0;
-	volatile double err = 0, err_a = 0, err_b = 0;
-	volatile double sum_pow_a = 0, sum_a = 0, count_a = 0, sum_pow_b = 0, sum_b = 0, count_b = 0;
-	volatile double sum_pow_all = 0, sum_all = 0;
+	int count_all = set.size();
+	double ci = 0;
+	double err = 0, err_a = 0, err_b = 0;
+	double sum_pow_a = 0, sum_a = 0, count_a = 0, sum_pow_b = 0, sum_b = 0, count_b = 0;
+	double sum_pow_all = 0, sum_all = 0;
 
 	// calculate sum of y and sum of y^2
 	for (int l = 0; l < count_all; l++) {
