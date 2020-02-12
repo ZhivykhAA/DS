@@ -14,12 +14,12 @@ void Stump::setSet(vector<int> str) {
 
 const TStump &learn(vector<vector<int>> set) {
 	TStump S;
-	double ci;
 
-	double sum_pow_a = 0, sum_a = 0, count_a = 0, sum_pow_b = 0, sum_b = 0, count_b = 0;
-	double sum_pow_all = 0, sum_all = 0;
-	int count_all = set.size();
-	double err = 0, err_a = 0, err_b = 0;
+	volatile int count_all = set.size();
+	volatile double ci = 0;
+	volatile double err = 0, err_a = 0, err_b = 0;
+	volatile double sum_pow_a = 0, sum_a = 0, count_a = 0, sum_pow_b = 0, sum_b = 0, count_b = 0;
+	volatile double sum_pow_all = 0, sum_all = 0;
 
 	// calculate sum of y and sum of y^2
 	for (int l = 0; l < count_all; l++) {
@@ -27,6 +27,7 @@ const TStump &learn(vector<vector<int>> set) {
 		sum_pow_all += pow(set[l][set[l].size() - 1], 2);
 	}
 
+	err_a = 0;
 	err_b = sum_pow_all - pow(sum_all, 2) / count_all;
 	S.min_err = err_a + err_b;
 
