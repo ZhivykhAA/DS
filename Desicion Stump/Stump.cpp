@@ -12,8 +12,51 @@ void Stump::setSet(vector<int> str) {
 }
 
 
+// reading data from file
+Stump reading_data() {
+
+	Stump st;
+	string line;
+	string word = "";
+	vector<int> str = {};
+
+	ifstream file("D:\\Machine Learning\\Weka-3-8-4\\data\\cpu.arff");
+
+	if (file.is_open()) {
+		while (getline(file, line)) {
+			if (!line.empty() && line[0] != '%' && line[0] != '@') {
+				str = {};
+				for (int i = 0; i < line.length(); i++) {
+
+					if (line[i] != ',') {
+						word += line[i];
+					}
+					else {
+						str.push_back(stoi(word));
+						word = "";
+					}
+
+					if (i == line.length() - 1) {
+						str.push_back(stoi(word));
+						word = "";
+					}
+				}
+				st.setSet(str);
+			}
+		}
+	}
+	else
+		cout << "File is not found";
+	file.close();
+
+	return st;
+}
+
+
+// learn desicion stump
 const TStump learn(vector<vector<int>> set) {
 	TStump S;
+	//set = .getSet()
 
 	int count_all = set.size();
 	double ci = 0;
@@ -126,6 +169,7 @@ const TStump learn(vector<vector<int>> set) {
 }
 
 
+// cross-validation
 double cross(int k, vector<vector<int>> set) {
 
 	int k_test = set.size() / k;

@@ -29,6 +29,6 @@ struct TStump {
 	double min_err;
 };
 
-const TStump &learn(vector<vector<int>> set);
-
+Stump reading_data();
+const TStump learn(vector<vector<int>> set);
 double cross(int k, vector<vector<int>> set);
