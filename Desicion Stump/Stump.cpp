@@ -1,26 +1,22 @@
 #include "stdafx.h"
 #include "Stump.h"
 
-Stump::Stump() {
-}
 
-Stump::~Stump() {
-}
+/* --   Data   --  */
 
-void Stump::setSet(vector<int> str) {
+void Data::setData(vector<int> str) {
 	data.push_back(str);
 }
 
-
 // reading data from file
-Stump reading_data() {
+Data Data::reading_data(string file_adress) {
 
-	Stump st;
+	Data st;
 	string line;
 	string word = "";
 	vector<int> str = {};
 
-	ifstream file("D:\\Machine Learning\\Weka-3-8-4\\data\\cpu.arff");
+	ifstream file(file_adress);
 
 	if (file.is_open()) {
 		while (getline(file, line)) {
@@ -41,7 +37,7 @@ Stump reading_data() {
 						word = "";
 					}
 				}
-				st.setSet(str);
+				st.setData(str);
 			}
 		}
 	}
@@ -52,37 +48,70 @@ Stump reading_data() {
 	return st;
 }
 
+void Data::sortD(int pr) { 
+	sort(data.begin(), data.end(), [&pr](vector<int> a, vector<int> b) mutable {return a[pr] < b[pr]; }); 
+};
+
+void Data::shuffleD() { 
+	random_shuffle(data.begin(), data.end()); 
+};
+
+void Data::eraseD(int s1, int s2) { 
+	data.erase(data.begin() + s1, data.begin() + s2); 
+};
+
+
+/* --   Stump   -- */
+
+void Stump::setVal(double ai, double bi, double ci, double pr, double err) {
+	a = ai;
+	b = bi;
+	c = ci;
+	best_pr = pr;
+	min_err = err;
+};
+
+double Stump::errAB(double sum_pow, double sum, int count) {
+	return sum_pow - pow(sum, 2) / count;
+};
+double Stump::err(double err_a, double err_b, int count) {
+	return sqrt((err_a + err_b) / count);
+};
+
+
+/* --   Learn   -- */
 
 // learn desicion stump
-const TStump learn(vector<vector<int>> set) {
-	TStump S;
-	//set = .getSet()
+const Stump Learn::learnDS(Data set) {
+	Stump S;
 
-	int count_all = set.size();
-	double ci = 0;
+	int count_all = set.sizeD();
+	double ci = 0, ai = 0, bi = 0;
 	double err = 0, err_a = 0, err_b = 0;
 	double sum_pow_a = 0, sum_a = 0, count_a = 0, sum_pow_b = 0, sum_b = 0, count_b = 0;
 	double sum_pow_all = 0, sum_all = 0;
 
+	// index of y
+	int y = set.sizeD_i() - 1;
+
 	// calculate sum of y and sum of y^2
 	for (int l = 0; l < count_all; l++) {
-		sum_all += set[l][set[l].size() - 1];
-		sum_pow_all += pow(set[l][set[l].size() - 1], 2);
+		sum_all += set.el(l, y);
+		sum_pow_all += pow(set.el(l, y), 2);
 	}
 
 	err_a = 0;
-	err_b = sum_pow_all - pow(sum_all, 2) / count_all;
+	err_b = S.errAB(sum_pow_all, sum_all, count_all);
+
 	S.min_err = err_a + err_b;
 
-	// index of y
-	int y = set[0].size() - 1;
 
 	for (int pr = 0; pr < y; pr++) {
 
-		sort(set.begin(), set.end(), [&pr](vector<int> a, vector<int> b) mutable {return a[pr] < b[pr]; });
+		set.sortD(pr);
 
 		// min C
-		ci = set[0][pr] - 1;
+		ci = set.el(0, pr) - 1;
 
 		sum_a = 0;
 		sum_pow_a = 0;
@@ -92,76 +121,69 @@ const TStump learn(vector<vector<int>> set) {
 		sum_b = sum_all;
 		sum_pow_b = sum_pow_all;
 		count_b = count_all;
-		err_b = sum_pow_b - pow(sum_b, 2) / count_b;
+		err_b = S.errAB(sum_pow_b, sum_b, count_b);
 
-		err = sqrt((err_a + err_b) / set.size());
+		err = S.err(err_a, err_b, count_all);
 
 		if (err < S.min_err) {
-			S.min_err = err;
-			S.a = 0;
-			S.b = sum_b / count_b;
-			S.c = ci;
-			S.best_pr = pr;
+			bi = sum_b / count_b;
+			S.setVal(0.0, bi, ci, pr, err);
 		}
 
 		// average C
 		for (int i = 0; i < count_all - 1; i++) {
-			if (set[i][pr] != set[i + 1][pr]) {
+			if (set.el(i, pr) != set.el(i + 1, pr)) {
 
-				ci = (set[i][pr] + set[i + 1][pr]) * 1.0 / 2;
+				ci = (set.el(i, pr) + set.el(i + 1, pr)) * 1.0 / 2;
 
-				sum_a += set[i][y];
-				sum_pow_a += pow(set[i][y], 2);
+				sum_a += set.el(i, y);
+				sum_pow_a += pow(set.el(i, y), 2);
 				count_a++;
-				err_a = sum_pow_a - pow(sum_a, 2) / count_a;
+				err_a = S.errAB(sum_pow_a, sum_a, count_a);
 
-				sum_b -= set[i][y];
-				sum_pow_b -= pow(set[i][y], 2);
+				sum_b -= set.el(i, y);
+				sum_pow_b -= pow(set.el(i, y), 2);
 				count_b--;
-				err_b = sum_pow_b - pow(sum_b, 2) / count_b;
+				err_b = S.errAB(sum_pow_b, sum_b, count_b);
 
-				err = sqrt((err_a + err_b) / set.size());
+				err = S.err(err_a, err_b, count_all);
 
 				if (err < S.min_err) {
-					S.min_err = err;
-					S.a = sum_a / count_a;
-					S.b = sum_b / count_b;
-					S.c = ci;
-					S.best_pr = pr;
+					ai = sum_a / count_a;
+					bi = sum_b / count_b;
+					S.setVal(ai, bi, ci, pr, err);
 				}
 			}
 			else {
-				sum_a += set[i][y];
-				sum_pow_a += pow(set[i][y], 2);
+				sum_a += set.el(i, y);
+				sum_pow_a += pow(set.el(i, y), 2);
 				count_a++;
 
-				sum_b -= set[i][y];
-				sum_pow_b -= pow(set[i][y], 2);
+				sum_b -= set.el(i, y);
+				sum_pow_b -= pow(set.el(i, y), 2);
 				count_b--;
 			}
 		}
 
 		// max C
-		ci = set[count_all - 1][pr] + 1;
+		ci = set.el(count_all - 1, pr) + 1;
 
 		sum_a = sum_all;
 		sum_pow_a = sum_pow_all;
 		count_a = count_all;
-		err_a = sum_pow_a - pow(sum_a, 2) / count_a;
+		err_a = S.errAB(sum_pow_a, sum_a, count_a);
 
 		sum_b = 0;
 		sum_pow_b = 0;
 		count_b = 0;
 		err_b = 0;
 
-		err = sqrt((err_a + err_b) / set.size());
+		err = S.err(err_a, err_b, count_all);
 
 		if (err < S.min_err) {
-			S.min_err = err;
-			S.a = sum_a / count_a;
-			S.b = sum_b / count_b;
-			S.c = ci;
-			S.best_pr = pr;
+			ai = sum_a / count_a;
+			bi = sum_b / count_b;
+			S.setVal(ai, bi, ci, pr, err);
 		}
 	}
 
@@ -170,16 +192,18 @@ const TStump learn(vector<vector<int>> set) {
 
 
 // cross-validation
-double cross(int k, vector<vector<int>> set) {
+double cross_val(int k, Data set) {
 
-	int k_test = set.size() / k;
-	int k_ost = set.size() - k * k_test;
+	int k_test = set.sizeD() / k;
+	int k_ost = set.sizeD() - k * k_test;
 	double err_a, err_b, cross_err = 0, min_err;
 
-	vector<vector<int>> data, test;
-	TStump St;
+	Data data;
+	Stump St;
+	Learn L;
+	int begin_test = 0;
 
-	random_shuffle(set.begin(), set.end());
+	set.shuffleD();
 
 	// run data K times, by changing learn and test dataset
 	for (int i = 0; i < k; i++) {
@@ -191,8 +215,8 @@ double cross(int k, vector<vector<int>> set) {
 		St.best_pr = NULL;
 		min_err = NULL;
 
-		test.erase(test.begin(), test.end());
 
+		// распределение остатка равномерно по участкам датасета
 		int siz;
 		if (k_ost > 0) {
 			siz = k_test + 1;
@@ -201,31 +225,31 @@ double cross(int k, vector<vector<int>> set) {
 		else {
 			siz = k_test;
 		}
-		test.resize(siz);
 
-		// create test dataset
-		move(data.begin() + siz * i, data.begin() + siz * (i + 1), test.begin());
 		// create learn dataset
-		data.erase(data.begin() + siz * i, data.begin() + siz * (i + 1));
-
+		data.eraseD(begin_test, begin_test + siz);
+		int a;
 		// learn
-		St = learn(data);
+		St = L.learnDS(data);
 
 		// test
 		err_a = 0;
 		err_b = 0;
-		for (int j = 0; j < test.size(); j++) {
-			if (test[j][St.best_pr] < St.c) {
-				err_a += pow(test[j][test[0].size() - 1] - St.a, 2);
+		for (int j = begin_test; j < begin_test + siz; j++) {
+			if (set.el(j, St.best_pr) < St.c) {
+				err_a += pow(set.el(j, set.sizeD_i() - 1) - St.a, 2);
 			}
 			else {
-				err_b += pow(test[j][test[0].size() - 1] - St.b, 2);
+				err_b += pow(set.el(j, set.sizeD_i() - 1) - St.b, 2);
 			}
 		}
-		cross_err += pow(sqrt((err_a + err_b) / test.size()), 2);
+		cross_err += pow(sqrt((err_a + err_b) / siz), 2);
+
+		begin_test += siz;
 	}
 
 	cross_err = sqrt(cross_err / k);
 
 	return cross_err;
 }
+

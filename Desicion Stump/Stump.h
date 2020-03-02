@@ -11,24 +11,47 @@
 
 using namespace std;
 
-class Stump
-{
-	vector<vector<int>> data; 
+
+class Data {
+	vector<vector<int>> data;
 public:
-	Stump();
-	~Stump();
-	void setSet(vector<int> str);
-	const vector<vector<int>> &getSet() { return data; };
+	Data() {};
+	~Data() {};
+
+	void setData(vector<int> str);
+	Data reading_data(string file_adress);
+
+	const vector<vector<int>> &getData() { return data; };
+	const int sizeD() { return data.size(); };
+	const int sizeD_i() { return data[0].size(); };
+	const int el(int i, int j) { return data[i][j]; };
+
+	void sortD(int pr);
+	void shuffleD();
+	void eraseD(int s1, int s2);
 };
 
-struct TStump {
+
+class Stump {
+public:
 	double a;
 	double b;
 	double c;
 	double best_pr;
 	double min_err;
+
+	Stump() {};
+	~Stump() {};
+
+	void setVal(double ai, double bi, double ci, double pr, double err);
+	double errAB(double sum_pow, double sum, int count);
+	double err(double err_a, double err_b, int count);
 };
 
-Stump reading_data();
-const TStump learn(vector<vector<int>> set);
-double cross(int k, vector<vector<int>> set);
+class Learn {
+public:
+	const Stump learnDS(Data set);
+};
+
+
+double cross_val(int k, Data set);
