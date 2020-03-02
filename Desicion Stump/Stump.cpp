@@ -61,9 +61,9 @@ void Data::eraseD(int s1, int s2) {
 };
 
 
-/* --   Stump   -- */
+/* --   Model   -- */
 
-void Stump::setVal(double ai, double bi, double ci, double pr, double err) {
+void Model::setVal(double ai, double bi, double ci, double pr, double err) {
 	a = ai;
 	b = bi;
 	c = ci;
@@ -71,10 +71,10 @@ void Stump::setVal(double ai, double bi, double ci, double pr, double err) {
 	min_err = err;
 };
 
-double Stump::errAB(double sum_pow, double sum, int count) {
+double Model::errAB(double sum_pow, double sum, int count) {
 	return sum_pow - pow(sum, 2) / count;
 };
-double Stump::err(double err_a, double err_b, int count) {
+double Model::err(double err_a, double err_b, int count) {
 	return sqrt((err_a + err_b) / count);
 };
 
@@ -82,8 +82,8 @@ double Stump::err(double err_a, double err_b, int count) {
 /* --   Learn   -- */
 
 // learn desicion stump
-const Stump Learn::learnDS(Data set) {
-	Stump S;
+const Model Learn::learnDS(Data set) {
+	Model Stump;
 
 	int count_all = set.sizeD();
 	double ci = 0, ai = 0, bi = 0;
@@ -101,9 +101,9 @@ const Stump Learn::learnDS(Data set) {
 	}
 
 	err_a = 0;
-	err_b = S.errAB(sum_pow_all, sum_all, count_all);
+	err_b = Stump.errAB(sum_pow_all, sum_all, count_all);
 
-	S.min_err = err_a + err_b;
+	Stump.min_err = err_a + err_b;
 
 
 	for (int pr = 0; pr < y; pr++) {
@@ -121,13 +121,13 @@ const Stump Learn::learnDS(Data set) {
 		sum_b = sum_all;
 		sum_pow_b = sum_pow_all;
 		count_b = count_all;
-		err_b = S.errAB(sum_pow_b, sum_b, count_b);
+		err_b = Stump.errAB(sum_pow_b, sum_b, count_b);
 
-		err = S.err(err_a, err_b, count_all);
+		err = Stump.err(err_a, err_b, count_all);
 
-		if (err < S.min_err) {
+		if (err < Stump.min_err) {
 			bi = sum_b / count_b;
-			S.setVal(0.0, bi, ci, pr, err);
+			Stump.setVal(0.0, bi, ci, pr, err);
 		}
 
 		// average C
@@ -139,19 +139,19 @@ const Stump Learn::learnDS(Data set) {
 				sum_a += set.el(i, y);
 				sum_pow_a += pow(set.el(i, y), 2);
 				count_a++;
-				err_a = S.errAB(sum_pow_a, sum_a, count_a);
+				err_a = Stump.errAB(sum_pow_a, sum_a, count_a);
 
 				sum_b -= set.el(i, y);
 				sum_pow_b -= pow(set.el(i, y), 2);
 				count_b--;
-				err_b = S.errAB(sum_pow_b, sum_b, count_b);
+				err_b = Stump.errAB(sum_pow_b, sum_b, count_b);
 
-				err = S.err(err_a, err_b, count_all);
+				err = Stump.err(err_a, err_b, count_all);
 
-				if (err < S.min_err) {
+				if (err < Stump.min_err) {
 					ai = sum_a / count_a;
 					bi = sum_b / count_b;
-					S.setVal(ai, bi, ci, pr, err);
+					Stump.setVal(ai, bi, ci, pr, err);
 				}
 			}
 			else {
@@ -171,23 +171,23 @@ const Stump Learn::learnDS(Data set) {
 		sum_a = sum_all;
 		sum_pow_a = sum_pow_all;
 		count_a = count_all;
-		err_a = S.errAB(sum_pow_a, sum_a, count_a);
+		err_a = Stump.errAB(sum_pow_a, sum_a, count_a);
 
 		sum_b = 0;
 		sum_pow_b = 0;
 		count_b = 0;
 		err_b = 0;
 
-		err = S.err(err_a, err_b, count_all);
+		err = Stump.err(err_a, err_b, count_all);
 
-		if (err < S.min_err) {
+		if (err < Stump.min_err) {
 			ai = sum_a / count_a;
 			bi = sum_b / count_b;
-			S.setVal(ai, bi, ci, pr, err);
+			Stump.setVal(ai, bi, ci, pr, err);
 		}
 	}
 
-	return S;
+	return Stump;
 }
 
 
@@ -196,10 +196,10 @@ double cross_val(int k, Data set) {
 
 	int k_test = set.sizeD() / k;
 	int k_ost = set.sizeD() - k * k_test;
-	double err_a, err_b, cross_err = 0, min_err;
+	double err_a, err_b, cross_err = 0, min_err = 0;
 
 	Data data;
-	Stump St;
+	Model St;
 	Learn L;
 	int begin_test = 0;
 
@@ -209,11 +209,7 @@ double cross_val(int k, Data set) {
 	for (int i = 0; i < k; i++) {
 
 		data = set;
-		St.a = NULL;
-		St.b = NULL;
-		St.c = NULL;
-		St.best_pr = NULL;
-		min_err = NULL;
+		St.setVal(NULL, NULL, NULL, NULL, NULL);
 
 
 		// распределение остатка равномерно по участкам датасета

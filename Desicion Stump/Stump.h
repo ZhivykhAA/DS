@@ -32,7 +32,7 @@ public:
 };
 
 
-class Stump {
+class Model {
 public:
 	double a;
 	double b;
@@ -40,8 +40,8 @@ public:
 	double best_pr;
 	double min_err;
 
-	Stump() {};
-	~Stump() {};
+	Model() {};
+	~Model() {};
 
 	void setVal(double ai, double bi, double ci, double pr, double err);
 	double errAB(double sum_pow, double sum, int count);
@@ -50,7 +50,7 @@ public:
 
 class Learn {
 public:
-	const Stump learnDS(Data set);
+	const Model learnDS(Data set);
 };
 
 
