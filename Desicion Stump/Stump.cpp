@@ -60,6 +60,27 @@ void Data::eraseD(int s1, int s2) {
 	data.erase(data.begin() + s1, data.begin() + s2); 
 };
 
+vector<int> Data::beginTest(int i, int k, Data set) {
+	vector<int> begT(2);
+
+	int sizeT = set.sizeD() / k;
+	int begin_test;
+	int ost = set.sizeD() % k;
+
+	if (i < ost) {
+		sizeT++;
+		begin_test = i * sizeT;
+	}
+	else {
+		begin_test = ost * (sizeT + 1) + (i - ost) * sizeT;
+	}
+
+	begT[0] = begin_test;
+	begT[1] = sizeT;
+
+	return begT;
+};
+
 
 /* --   Model   -- */
 
@@ -198,10 +219,12 @@ double cross_val(int k, Data set) {
 	int k_ost = set.sizeD() - k * k_test;
 	double err_a, err_b, cross_err = 0, min_err = 0;
 
-	Data data;
+	Data data, test;
 	Model St;
 	Learn L;
 	int begin_test = 0;
+
+	vector<int> bTest(2);
 
 	set.shuffleD();
 
@@ -211,27 +234,19 @@ double cross_val(int k, Data set) {
 		data = set;
 		St.setVal(NULL, NULL, NULL, NULL, NULL);
 
-
-		// распределение остатка равномерно по участкам датасета
-		int siz;
-		if (k_ost > 0) {
-			siz = k_test + 1;
-			k_ost--;
-		}
-		else {
-			siz = k_test;
-		}
+		// dataTest start index and size 
+		bTest = set.beginTest(i, k, set);
 
 		// create learn dataset
-		data.eraseD(begin_test, begin_test + siz);
-		int a;
+		data.eraseD(bTest[0], bTest[0] + bTest[1]);
+
 		// learn
 		St = L.learnDS(data);
 
 		// test
 		err_a = 0;
 		err_b = 0;
-		for (int j = begin_test; j < begin_test + siz; j++) {
+		for (int j = bTest[0]; j < bTest[0] + bTest[1]; j++) {
 			if (set.el(j, St.best_pr) < St.c) {
 				err_a += pow(set.el(j, set.sizeD_i() - 1) - St.a, 2);
 			}
@@ -239,9 +254,7 @@ double cross_val(int k, Data set) {
 				err_b += pow(set.el(j, set.sizeD_i() - 1) - St.b, 2);
 			}
 		}
-		cross_err += pow(sqrt((err_a + err_b) / siz), 2);
-
-		begin_test += siz;
+		cross_err += pow(sqrt((err_a + err_b) / bTest[1]), 2);
 	}
 
 	cross_err = sqrt(cross_err / k);
