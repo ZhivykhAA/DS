@@ -4,12 +4,12 @@
 
 /* --   Data   --  */
 
-void Data::setData(vector<int> str) {
+void Data::setData(const vector<int>& str) {
 	data.push_back(str);
 }
 
 // reading data from file
-Data Data::reading_data(string file_adress) {
+Data Data::reading_data(const string& file_adress) {
 
 	Data st;
 	string line;
@@ -48,26 +48,33 @@ Data Data::reading_data(string file_adress) {
 	return st;
 }
 
+
+
+
 void Data::sortD(int pr) { 
-	sort(data.begin(), data.end(), [&pr](vector<int> a, vector<int> b) mutable {return a[pr] < b[pr]; }); 
+	sort(data.begin(), data.end(), [&pr](vector<int> a, vector<int> b) mutable {return a[pr] < b[pr]; });
+};
+
+void Data::randomshuffleD() {
+	random_shuffle(data.begin(), data.end());
 };
 
 void Data::shuffleD() { 
-	random_shuffle(data.begin(), data.end()); 
+	shuffle(data.begin(), data.end(), default_random_engine(1)); 
 };
 
 void Data::eraseD(int s1, int s2) { 
 	data.erase(data.begin() + s1, data.begin() + s2); 
 };
 
-vector<int> Data::beginTest(int i, int k, Data set) {
+vector<int> Data::beginTest(int i, int k, const Data& set) {
 	vector<int> begT(2);
 
 	int sizeT = set.sizeD() / k;
 	int begin_test;
 	int ost = set.sizeD() % k;
 
-	if (i < ost) {
+	if (i < ost) {  
 		sizeT++;
 		begin_test = i * sizeT;
 	}
@@ -84,20 +91,40 @@ vector<int> Data::beginTest(int i, int k, Data set) {
 
 /* --   Model   -- */
 
-void Model::setVal(double ai, double bi, double ci, double pr, double err) {
+void Model::setVal(double ai, double bi, double ci, double pr, double rmse) {
 	a = ai;
 	b = bi;
 	c = ci;
 	best_pr = pr;
-	min_err = err;
+	min_rmse = rmse;
 };
 
-double Model::errAB(double sum_pow, double sum, int count) {
+double Model::rmserrAB(double sum_pow, double sum, int count) {
 	return sum_pow - pow(sum, 2) / count;
 };
-double Model::err(double err_a, double err_b, int count) {
+
+
+double Model::rmserr(double err_a, double err_b, int count) {
 	return sqrt((err_a + err_b) / count);
 };
+
+double Model::maerr(const Data& data) {
+	double mae = 0;
+	int count = 0;
+
+	for (int i = 0; i < data.sizeD(); i++) {
+		count++;
+		if (data.el(i, best_pr) < c) {
+			mae += (abs(data.el(i, data.sizeD_i() - 1) - a) - mae) / count;
+		}
+		else {
+			mae += (abs(data.el(i, data.sizeD_i() - 1) - b) - mae) / count;
+		}
+	}
+
+	return mae;
+}
+
 
 
 /* --   Learn   -- */
@@ -108,7 +135,7 @@ const Model Learn::learnDS(Data set) {
 
 	int count_all = set.sizeD();
 	double ci = 0, ai = 0, bi = 0;
-	double err = 0, err_a = 0, err_b = 0;
+	double rmserr = 0, rmserr_a = 0, rmserr_b = 0;
 	double sum_pow_a = 0, sum_a = 0, count_a = 0, sum_pow_b = 0, sum_b = 0, count_b = 0;
 	double sum_pow_all = 0, sum_all = 0;
 
@@ -121,10 +148,11 @@ const Model Learn::learnDS(Data set) {
 		sum_pow_all += pow(set.el(l, y), 2);
 	}
 
-	err_a = 0;
-	err_b = Stump.errAB(sum_pow_all, sum_all, count_all);
+	rmserr_a = 0;
+	rmserr_b = Stump.rmserrAB(sum_pow_all, sum_all, count_all);
 
-	Stump.min_err = err_a + err_b;
+
+	Stump.min_rmse = rmserr_a + rmserr_b;
 
 
 	for (int pr = 0; pr < y; pr++) {
@@ -137,18 +165,18 @@ const Model Learn::learnDS(Data set) {
 		sum_a = 0;
 		sum_pow_a = 0;
 		count_a = 0;
-		err_a = 0;
+		rmserr_a = 0;
 
 		sum_b = sum_all;
 		sum_pow_b = sum_pow_all;
 		count_b = count_all;
-		err_b = Stump.errAB(sum_pow_b, sum_b, count_b);
+		rmserr_b = Stump.rmserrAB(sum_pow_b, sum_b, count_b);
 
-		err = Stump.err(err_a, err_b, count_all);
+		rmserr = Stump.rmserr(rmserr_a, rmserr_b, count_all);
 
-		if (err < Stump.min_err) {
+		if (rmserr < Stump.min_rmse) {
 			bi = sum_b / count_b;
-			Stump.setVal(0.0, bi, ci, pr, err);
+			Stump.setVal(0.0, bi, ci, pr, rmserr);
 		}
 
 		// average C
@@ -160,19 +188,19 @@ const Model Learn::learnDS(Data set) {
 				sum_a += set.el(i, y);
 				sum_pow_a += pow(set.el(i, y), 2);
 				count_a++;
-				err_a = Stump.errAB(sum_pow_a, sum_a, count_a);
+				rmserr_a = Stump.rmserrAB(sum_pow_a, sum_a, count_a);
 
 				sum_b -= set.el(i, y);
 				sum_pow_b -= pow(set.el(i, y), 2);
 				count_b--;
-				err_b = Stump.errAB(sum_pow_b, sum_b, count_b);
+				rmserr_b = Stump.rmserrAB(sum_pow_b, sum_b, count_b);
 
-				err = Stump.err(err_a, err_b, count_all);
+				rmserr = Stump.rmserr(rmserr_a, rmserr_b, count_all);
 
-				if (err < Stump.min_err) {
+				if (rmserr < Stump.min_rmse) {
 					ai = sum_a / count_a;
 					bi = sum_b / count_b;
-					Stump.setVal(ai, bi, ci, pr, err);
+					Stump.setVal(ai, bi, ci, pr, rmserr);
 				}
 			}
 			else {
@@ -192,32 +220,36 @@ const Model Learn::learnDS(Data set) {
 		sum_a = sum_all;
 		sum_pow_a = sum_pow_all;
 		count_a = count_all;
-		err_a = Stump.errAB(sum_pow_a, sum_a, count_a);
+		rmserr_a = Stump.rmserrAB(sum_pow_a, sum_a, count_a);
 
 		sum_b = 0;
 		sum_pow_b = 0;
 		count_b = 0;
-		err_b = 0;
+		rmserr_b = 0;
 
-		err = Stump.err(err_a, err_b, count_all);
+		rmserr = Stump.rmserr(rmserr_a, rmserr_b, count_all);
 
-		if (err < Stump.min_err) {
+		if (rmserr < Stump.min_rmse) {
 			ai = sum_a / count_a;
 			bi = sum_b / count_b;
-			Stump.setVal(ai, bi, ci, pr, err);
+			Stump.setVal(ai, bi, ci, pr, rmserr);
 		}
 	}
+
+	Stump.min_mae = Stump.maerr(set);
 
 	return Stump;
 }
 
 
 // cross-validation
-double cross_val(int k, Data set) {
+double* cross_val(int k, Data set, int n) {
+
+	double* errors = new double[2];
 
 	int k_test = set.sizeD() / k;
 	int k_ost = set.sizeD() - k * k_test;
-	double err_a, err_b, cross_err = 0, min_err = 0;
+	double err_a, err_b, err_a1, err_b1, cross_err_sqrt = 0, cross_err_abs = 0, min_err = 0;
 
 	Data data, test;
 	Model St;
@@ -225,6 +257,24 @@ double cross_val(int k, Data set) {
 	int begin_test = 0;
 
 	vector<int> bTest(2);
+
+	
+	set.randomshuffleD();
+
+	string s;
+	stringstream out;
+	out << n;
+	s = out.str();
+
+	string str = "shufflecpu" + s + ".arff";
+	char* ch = new char[str.size()];
+	for (int p = 0; p < str.size(); ++p) {
+		ch[p] = str[p];
+	}
+
+	const char* chstr = ch;
+
+	printInFile(chstr, set);
 
 	set.shuffleD();
 
@@ -246,19 +296,109 @@ double cross_val(int k, Data set) {
 		// test
 		err_a = 0;
 		err_b = 0;
+		err_a1 = 0;
+		err_b1 = 0;
 		for (int j = bTest[0]; j < bTest[0] + bTest[1]; j++) {
-			if (set.el(j, St.best_pr) < St.c) {
+			if (set.el(j, St.best_pr) <= St.c) {
 				err_a += pow(set.el(j, set.sizeD_i() - 1) - St.a, 2);
+				err_a1 += abs(set.el(j, set.sizeD_i() - 1) - St.a);
 			}
 			else {
 				err_b += pow(set.el(j, set.sizeD_i() - 1) - St.b, 2);
+				err_b1 += abs(set.el(j, set.sizeD_i() - 1) - St.b);
 			}
 		}
-		cross_err += pow(sqrt((err_a + err_b) / bTest[1]), 2);
+		
+		cross_err_sqrt += (err_a + err_b) / bTest[1];
+		cross_err_abs += (err_a1 + err_b1) / bTest[1]; 
 	}
 
-	cross_err = sqrt(cross_err / k);
+	cross_err_abs /= k;
+	cross_err_sqrt = sqrt(cross_err_sqrt / k);
 
-	return cross_err;
+	errors[0] = cross_err_abs;
+	errors[1] = cross_err_sqrt;
+
+	return errors;
 }
 
+
+
+void printInFile(const char* fileAdress, Data data) {
+
+	FILE* file;
+	fopen_s(&file, fileAdress, "w");
+
+	fprintf(file, "@relation 'cpu'\n@attribute MYCT numeric\n@attribute MMIN numeric\n@attribute MMAX numeric\n@attribute CACH numeric\n@attribute CHMIN numeric\n@attribute CHMAX numeric\n@attribute class numeric\n@data\n");
+
+	for (size_t i = 0; i < data.sizeD(); i++) {
+		for (size_t j = 0; j < data.sizeD_i() - 1; j++) {
+			fprintf(file, "%i,", data.el(i,j));
+		}
+		fprintf(file, "%i\n", data.el(i, data.sizeD_i() - 1));
+	}
+	fclose(file);
+
+}
+
+
+
+//
+//void crossValidation(int n, Data data)	// cross validation method (n > 1)
+//{
+//	if (n < 2)
+//	{
+//		cout << "Number of folds must be more than 1" << endl;
+//		return;
+//	}
+//	double sqroot = 0, abserror = 0;
+//	int *folds;
+//	folds = new int[n];
+//	int h = data.sizeD() % n;
+//	int kb = 0, ke = 0;
+//	for (int i = 0; i < n; ++i)
+//	{
+//		folds[i] = (data.sizeD() / n) + (i < h ? 1 : 0);
+//	}
+//
+//	data.shuffleD();      // shuffle all data for better random
+//
+//	for (int i = 0; i < n; ++i)
+//	{
+//		Data test, train;
+//		kb = ke;
+//		ke += folds[i];
+//		for (int j = 0; j < data.sizeD(); ++j)
+//		{
+//			double *arr;
+//			arr = new double[TS.size];
+//			arr = TS.data[j];
+//
+//			if ((j >= kb) && (j < ke))
+//			{
+//				test.data.push_back(arr);
+//			}
+//			else
+//			{
+//				train.data.push_back(arr);
+//			}
+//		}
+//
+//		DecFunc DF(train);
+//		DF.findFunc();
+//		DF.printRes();
+//		sqroot += DF.testSqrtSample(test);
+//		abserror += DF.testAbsSample(test);
+//
+//	}
+//	sqroot /= n;
+//	abserror /= n;
+//
+//	cout << "Instances : " << TS.data.size() << endl;
+//	cout << "Attributes : " << TS.size << endl;
+//	cout << "Cross Validation.  Folds : " << n << endl;
+//	cout << "=== SUMMARY ===" << endl;
+//	cout << "Mean absolute error : " << abserror << endl;
+//	cout << "Root mean squared error : " << sqroot << endl;
+//	return;
+//}

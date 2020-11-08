@@ -4,10 +4,12 @@
 #include "string"
 #include "conio.h"
 #include "algorithm"
+#include <random>      
 #include "iostream"
 #include "vector"
 #include "math.h"
 #include <ctime>
+#include <sstream>
 
 using namespace std;
 
@@ -18,18 +20,19 @@ public:
 	Data() {};
 	~Data() {};
 
-	void setData(vector<int> str);
-	Data reading_data(string file_adress);
+	void setData(const vector<int>& str);
+	Data reading_data(const string& file_adress);
 
-	const vector<vector<int>> &getData() { return data; }; // изменить
-	const int sizeD() { return data.size(); };
-	const int sizeD_i() { return data[0].size(); };
-	const int el(int i, int j) { return data[i][j]; };
+	vector<vector<int>> getData() const { return data; }; // изменить
+	int sizeD() const { return data.size(); };
+	int sizeD_i() const { return data[0].size(); };
+	int el(int i, int j) const  { return data[i][j]; };
 
 	void sortD(int pr);
+	void randomshuffleD();
 	void shuffleD();
 	void eraseD(int s1, int s2);
-	vector<int> beginTest(int i, int k, Data set);
+	vector<int> beginTest(int i, int k, const Data& set);
 };
 
 
@@ -39,14 +42,16 @@ public:
 	double b;
 	double c;
 	double best_pr;
-	double min_err;
+	double min_rmse;
+	double min_mae;
 
 	Model() {};
 	~Model() {};
 
-	void setVal(double ai, double bi, double ci, double pr, double err);
-	double errAB(double sum_pow, double sum, int count);
-	double err(double err_a, double err_b, int count);
+	void setVal(double ai, double bi, double ci, double pr, double rmse);
+	double rmserrAB(double sum_pow, double sum, int count);
+	double rmserr(double err_a, double err_b, int count);
+	double maerr(const Data& data);
 };
 
 class Learn {
@@ -55,4 +60,7 @@ public:
 };
 
 
-double cross_val(int k, Data set);
+double* cross_val(int k, Data set, int n);
+void printInFile(const char*  fileAdress, Data data);
+
+//void crossValidation(int n, Data data);
